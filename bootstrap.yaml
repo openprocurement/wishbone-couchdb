@@ -1,0 +1,23 @@
+modules:
+  input:
+    module: wishbone.module.input.couchdbpoller
+    arguments:
+      couchdb_url: "http://localhost:5984/tenders"
+      seqfile: seqfile
+  
+  fanout:
+    module: wishbone.module.flow.fanout
+
+  output_console:
+    module: wishbone.module.output.stdout
+    arguments:
+      colorize: true
+          
+  output_couchdb:
+    module: wishbone.module.output.couchdbpuller
+    arguments:
+      couchdb_url: "http://localhost:5984/openprocurement"
+
+routingtable:
+  - input.outbox -> output_couchdb.inbox
+  
