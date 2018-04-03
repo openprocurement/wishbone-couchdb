@@ -19,5 +19,7 @@ modules:
       couchdb_url: "http://localhost:5984/openprocurement"
 
 routingtable:
-  - input.outbox -> output_couchdb.inbox
+  - input.outbox -> fanout.inbox
+  - fanout.one   -> output_console.inbox
+  - fanout.two   -> output_couchdb.inbox
   
