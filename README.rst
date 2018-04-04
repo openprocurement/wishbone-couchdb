@@ -36,7 +36,7 @@ Example Usage
 Installation
 ------------
 
-pip install 'git+git@gitlab.qg:yshalenyk/wishbone-couchdb.git'
+pip install 'git+https://github.com/openprocurement/wishbone-couchdb.git#egg=wishbonecouchdb'
 
 Requirements
 ^^^^^^^^^^^^
