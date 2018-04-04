@@ -47,7 +47,6 @@ setup(name='wishbonecouchdb',
       packages=['wishbonecouchdb'],
       zip_safe=False,
       install_requires=INSTALL_REQUIRES,
-      tests_require=TEST_REQUIRES,
       extras_require=EXTRA,
       entry_points=ENTRY_POINTS
       )

@@ -61,6 +61,7 @@ class CouchdbPuller(OutputModule):
                 id,
                 rev
             ))
+        data['_id'] = id
         doc, _rev = self.__save(data, id)
         if doc:
             self.logging.info("Saved {}".format(doc))

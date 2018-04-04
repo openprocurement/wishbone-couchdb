@@ -4,6 +4,7 @@ from couchdb import Database
 from couchdb.http import HTTPError
 from gevent import sleep
 from wishbone.module import InputModule
+from wishbone.event import Event
 
 
 class CouchdbPoller(InputModule):
@@ -29,8 +30,10 @@ class CouchdbPoller(InputModule):
             self.logging.fatal("Invalid database name")
             # TODO: create db
 
-    def __get_doc(self, doc_id):
-        return loads(self.couchdb.resource.get(doc_id)[2].read())
+    def _get_doc(self, doc_id):
+        return loads(
+                self.couchdb.resource.get(doc_id)[2].read()
+                )
 
     def preHook(self):
         if os.path.exists(self.seqfile):
@@ -49,11 +52,8 @@ class CouchdbPoller(InputModule):
                 self.since = feed.get('seq', feed.get('last_seq', "now"))
                 self.logging.info("Change event {}".format(feed))
                 if 'id' in feed:
-                    doc = self.__get_doc(feed['id'])
-                    event = self.generateEvent(
-                        doc,
-                        self.kwargs.destination
-                    )
-                    self.submit(event, "outbox")
+                    doc = self._get_doc(feed['id'])
+                    e = Event(doc) 
+                    self.submit(e, "outbox")
                 sleep(0)
         self.logging.info("Stopping changes feed from couchdb")
