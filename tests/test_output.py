@@ -42,8 +42,11 @@ def test_couchdb_output(db):
     data = {"data": "data", "_id": "test_doc"}
     e = Event(data)
     module.pool.queue.inbox.put(e)
-    while not module.pool.queue.inbox.empty():
+    doc = module.couchdb.get('test_doc')
+    retry = 5
+    while doc is None and retry:
+        doc = module.couchdb.get('test_doc')
         sleep(0.1)
-
-    doc = module.couchdb.get("test_doc")
+        retry -= 1
+    assert doc
     assert doc['data'] == 'data'
