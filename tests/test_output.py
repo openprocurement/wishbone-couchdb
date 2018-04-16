@@ -34,6 +34,7 @@ def test_couchdb_output(db):
     module = CouchdbPuller(
         config,
         couchdb_url="{}/{}".format(couchdb_url, DB_NAME),
+        bulk=1
     )
 
     module.pool.queue.inbox.disableFallThrough()

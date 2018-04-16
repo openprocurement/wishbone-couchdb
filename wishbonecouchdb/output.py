@@ -1,6 +1,9 @@
 from couchdb import Database
 from ujson import loads
 from wishbone.module import OutputModule
+from gevent import spawn
+from uuid import uuid4
+from multiprocessing import cpu_count
 
 
 class CouchdbPuller(OutputModule):
@@ -11,7 +14,8 @@ class CouchdbPuller(OutputModule):
             couchdb_url,
             payload=None,
             selection="data",
-            parallel_streams=1,
+            bulk=100,
+            parallel_streams=cpu_count()*2,
             native_events=False,
             **kw
             ):
@@ -19,21 +23,39 @@ class CouchdbPuller(OutputModule):
         self.pool.createQueue("inbox")
         self.registerConsumer(self.consume, "inbox")
         self.couchdb = Database(couchdb_url)
+        self._bulk_size = bulk
+        self._bulk = {}
 
-    def __save(self, data, id=None):
+    def __save(self):
         self.logging.debug(
-            "Saving: {}".format(data)
+            "Saving: {} docs".format(len(self._bulk))
         )
         try:
-            return self.couchdb.save(data)
+            responce = self.couchdb.update([
+                doc for doc in self._bulk.values()
+            ])
+            for ok, doc_id, rest in responce:
+                if ok:
+                    self.logging.info(
+                        "Saved {}".format(doc_id)
+                    )
+                else:
+                    self.logging.error(
+                        "Error on save bulk. {}".format(
+                            rest.message
+                        )
+                    )
         except Exception as e:
             self.logging.error(
-                "Error {} on save data {}".format(
+                "Uncaught error {} on save bulk".format(
                     e,
-                    id
                 )
             )
-            return False
+        finally:
+            self._bulk = {}
+            self.logging.debug("Cleaned bulk")
+
+        return False
 
     def consume(self, event):
         data = self.encode(
@@ -46,22 +68,20 @@ class CouchdbPuller(OutputModule):
                 data = loads(data)
             except ValueError:
                 self.logging.error(
-                    "Unable to parse data from raw string"
+                    "Unable to parse data from raw string. Skipping"
                 )
-                self.logging.info('Will attempt to save as is')
-                doc, _rev = self.__save(data, None)
-                if doc:
-                    self.logging.info("Saved {}".format(doc))
-                return
         id = data.get('id', data.get('_id'))
+        if id:
+            data['_id'] = id 
         if id and (id in self.couchdb):
             rev = self.couchdb.get(id).rev
             data['_rev'] = rev
-            self.logging.info("Update revision in data {} to {}".format(
+            self.logging.debug("Update revision in data {} to {}".format(
                 id,
                 rev
             ))
-        data['_id'] = id
-        doc, _rev = self.__save(data, id)
-        if doc:
-            self.logging.info("Saved {}".format(doc))
+        self._bulk[data.get('_id', uuid4().hex)] = data
+        self.logging.info("Added {} to bulk queue. Size {}".format(id, len(self._bulk)))
+        if len(self._bulk) >= self._bulk_size:
+            g = spawn(self.__save)
+            g.join()
