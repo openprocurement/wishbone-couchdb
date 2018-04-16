@@ -1,6 +1,6 @@
 from setuptools import setup
 
-VERSION = '1.0.0a1.dev1'
+VERSION = '1.0.0a1.dev2'
 DESCRIPTION = """
 Input and Output wishbone modules for Couchdb
 """
