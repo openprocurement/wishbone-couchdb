@@ -43,11 +43,7 @@ def test_couchdb_output(db):
     data = {"data": "data", "_id": "test_doc"}
     e = Event(data)
     module.pool.queue.inbox.put(e)
-    doc = module.couchdb.get('test_doc')
-    retry = 5
-    while doc is None and retry:
-        doc = module.couchdb.get('test_doc')
-        sleep(0.1)
-        retry -= 1
+    data = module.couchdb.changes(feed="longpoll")
+    doc = module.couchdb.get(data['results'][0]['id'])
     assert doc
     assert doc['data'] == 'data'
