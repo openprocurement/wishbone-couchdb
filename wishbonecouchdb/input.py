@@ -27,7 +27,7 @@ class CouchdbPoller(InputModule):
         try:
             self.couchdb = Database(couchdb_url)
         except HTTPError:
-            self.logging.fatal("Invalid database name")
+            self.logging.error("Invalid database name")
             # TODO: create db
 
     def _get_doc(self, doc_id):
@@ -50,7 +50,7 @@ class CouchdbPoller(InputModule):
         while self.loop():
             for feed in self.couchdb.changes(feed="continuous", since=self.since):
                 self.since = feed.get('seq', feed.get('last_seq', "now"))
-                self.logging.info("Change event {}".format(feed))
+                self.logging.debug("Change event {}".format(feed))
                 if 'id' in feed:
                     doc = self._get_doc(feed['id'])
                     e = Event(doc) 

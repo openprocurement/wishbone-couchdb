@@ -81,7 +81,7 @@ class CouchdbPuller(OutputModule):
                 rev
             ))
         self._bulk[data.get('_id', uuid4().hex)] = data
-        self.logging.info("Added {} to bulk queue. Size {}".format(id, len(self._bulk)))
+        self.logging.debug("Added {} to bulk queue. Size {}".format(id, len(self._bulk)))
         if len(self._bulk) >= self._bulk_size:
             g = spawn(self.__save)
             g.join()
