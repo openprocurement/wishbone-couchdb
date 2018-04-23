@@ -3,7 +3,6 @@ from ujson import loads
 from wishbone.module import OutputModule
 from gevent import spawn
 from uuid import uuid4
-from multiprocessing import cpu_count
 
 
 class CouchdbPuller(OutputModule):
@@ -15,7 +14,7 @@ class CouchdbPuller(OutputModule):
             payload=None,
             selection="data",
             bulk=100,
-            parallel_streams=cpu_count()*2,
+            parallel_streams=1,
             native_events=False,
             **kw
             ):
@@ -25,6 +24,7 @@ class CouchdbPuller(OutputModule):
         self.couchdb = Database(couchdb_url)
         self._bulk_size = bulk
         self._bulk = {}
+
 
     def __save(self):
         self.logging.debug(
@@ -41,8 +41,10 @@ class CouchdbPuller(OutputModule):
                     )
                 else:
                     self.logging.error(
-                        "Error on save bulk. {}".format(
-                            rest.message
+                        "Error on save bulk. Type {}, message {}, doc {}".format(
+                            rest,
+                            getattr(rest, 'message', ''),
+                            doc_id
                         )
                     )
         except Exception as e:
@@ -72,7 +74,7 @@ class CouchdbPuller(OutputModule):
                 )
         id = data.get('id', data.get('_id'))
         if id:
-            data['_id'] = id 
+            data['_id'] = data['id'] = id 
         if id and (id in self.couchdb):
             rev = self.couchdb.get(id).rev
             data['_rev'] = rev

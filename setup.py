@@ -18,7 +18,8 @@ INSTALL_REQUIRES = [
     'wishbone',
     'ujson',
     'CouchDB',
-    'gevent'
+    'gevent',
+    'jq'
 ]
 TEST_REQUIRES = [
     'pytest',
@@ -33,6 +34,9 @@ ENTRY_POINTS = {
     ],
     'wishbone.module.output': [
         'couchdbpuller = wishbonecouchdb:CouchdbPuller'
+    ],
+    'wishbone.module.flow': [
+        'couchdbfilter = wishbonecouchdb:CouchdbFilter'
     ]
 }
 

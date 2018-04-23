@@ -2,3 +2,4 @@
 
 from .input import CouchdbPoller
 from .output import CouchdbPuller
+from .filter import CouchdbFilter
