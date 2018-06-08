@@ -46,6 +46,16 @@ class CouchdbPoller(InputModule):
         with open(self.seqfile, 'w+') as seqfile:
             seqfile.write(str(self.since))
 
+    def is_test_doc(self, doc):
+        mode = doc.get('mode', False)
+        if mode == "test":
+            return True
+        title = doc.get('title', False)
+        if title and ("TESTING" in title.upper()
+                or "ТЕСТУВАННЯ" in title.upper()):
+            return True
+        return False
+
     def produce(self):
         while self.loop():
             for feed in self.couchdb.changes(feed="continuous", since=self.since):
@@ -53,7 +63,8 @@ class CouchdbPoller(InputModule):
                 self.logging.debug("Change event {}".format(feed))
                 if 'id' in feed:
                     doc = self._get_doc(feed['id'])
-                    e = Event(doc) 
-                    self.submit(e, "outbox")
+                    if not self.is_test_doc(doc):
+                        e = Event(doc)
+                        self.submit(e, "outbox")
                 sleep(0)
         self.logging.info("Stopping changes feed from couchdb")

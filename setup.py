@@ -23,7 +23,8 @@ INSTALL_REQUIRES = [
 ]
 TEST_REQUIRES = [
     'pytest',
-    'pytest-cov'
+    'pytest-cov',
+    'mock'
 ]
 EXTRA = {
     "test": TEST_REQUIRES
@@ -33,7 +34,7 @@ ENTRY_POINTS = {
         'couchdbpoller = wishbonecouchdb:CouchdbPoller'
     ],
     'wishbone.module.output': [
-        'couchdbpuller = wishbonecouchdb:CouchdbPuller'
+        'couchdbpush = wishbonecouchdb:CouchdbPush'
     ],
     'wishbone.module.flow': [
         'couchdbfilter = wishbonecouchdb:CouchdbFilter'

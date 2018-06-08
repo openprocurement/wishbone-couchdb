@@ -40,3 +40,26 @@ def test_couchdb_input(db):
     module.couchdb.save({"data": "data"})
     one = getter(module.pool.queue.outbox)
     assert one.get().get('data') == "data"
+
+def test_couchdb_testing(db):
+    config = ActorConfig('couchdbpoller', 100, 1, {}, "")
+    module = CouchdbPoller(
+        config,
+        couchdb_url="{}/{}".format(couchdb_url, DB_NAME),
+    )
+
+    module.pool.queue.outbox.disableFallThrough()
+    module.start()
+    module.couchdb.save({"data": "data", "mode": "test"})
+    with pytest.raises(Exception) as e:
+        getter(module.pool.queue.outbox)
+        assert e.message == "No event from queue"
+
+    module.couchdb.save({"data": "data", "mode": "", "title": "testing"})
+    with pytest.raises(Exception) as e:
+        getter(module.pool.queue.outbox)
+        assert e.message == "No event from queue"
+
+    module.couchdb.save({"data": "data", "mode": "", "title": "title"})
+    one = getter(module.pool.queue.outbox)
+    assert one.get().get('data') == "data"
