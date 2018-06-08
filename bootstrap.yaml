@@ -14,7 +14,7 @@ modules:
       colorize: true
           
   output_couchdb:
-    module: wishbone.module.output.couchdbpuller
+    module: wishbone.module.output.couchdbpush
     arguments:
       couchdb_url: "http://localhost:5984/openprocurement"
 

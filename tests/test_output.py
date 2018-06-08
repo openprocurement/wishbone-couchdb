@@ -6,7 +6,7 @@ from wishbone.actor import ActorConfig
 from wishbone.utils.test import getter
 from gevent import sleep
 
-from wishbonecouchdb import CouchdbPuller
+from wishbonecouchdb import CouchdbPush
 
 
 DB_HOST = "admin:admin@127.0.0.1"
@@ -31,7 +31,7 @@ def db(request):
 
 def test_couchdb_output(db):
     config = ActorConfig('couchdbpoller', 100, 1, {}, "")
-    module = CouchdbPuller(
+    module = CouchdbPush(
         config,
         couchdb_url="{}/{}".format(couchdb_url, DB_NAME),
         bulk=1

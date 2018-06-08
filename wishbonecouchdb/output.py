@@ -5,7 +5,7 @@ from gevent import spawn
 from uuid import uuid4
 
 
-class CouchdbPuller(OutputModule):
+class CouchdbPush(OutputModule):
 
     def __init__(
             self,

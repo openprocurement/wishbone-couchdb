@@ -24,18 +24,18 @@ def db(request):
     delete()
     db = SERVER.create(DB_NAME)
     view = ViewDefinition('test', 'all', """
-        function (doc) { emit("test", doc._id); }
+        function (doc) { emit(doc._id, doc._id); }
     """)
     view.sync(db)
     request.addfinalizer(delete)
 
 def test_coucdb_filter(db):
-    config = ActorConfig('couchdbpoller', 100, 1, {}, "")
+    config = ActorConfig('couchdbfilter', 100, 1, {}, "")
     module = CouchdbFilter(
         actor_config=config,
         couchdb_url="{}/{}".format(couchdb_url, DB_NAME),
         view_path="test/all",
-        filter_key='"test"',
+        filter_key='._id',
         filter_value='if .mode == "test" then "" else ._id end',
         op="eq"
     )
