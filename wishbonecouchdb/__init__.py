@@ -2,4 +2,4 @@
 
 from .input import CouchdbPoller
 from .output import CouchdbPush
-from .filter import CouchdbFilter
+from .filter import ViewFilter, JQFilter

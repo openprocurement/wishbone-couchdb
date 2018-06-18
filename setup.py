@@ -19,7 +19,7 @@ INSTALL_REQUIRES = [
     'ujson',
     'CouchDB',
     'gevent',
-    'jq'
+    'pyjq'
 ]
 TEST_REQUIRES = [
     'pytest',
