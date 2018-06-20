@@ -37,7 +37,10 @@ ENTRY_POINTS = {
         'couchdbpush = wishbonecouchdb:CouchdbPush'
     ],
     'wishbone.module.flow': [
-        'couchdbfilter = wishbonecouchdb:CouchdbFilter'
+        'viewfilter = wishbonecouchdb:ViewFilter'
+    ],
+    'wishbone.module.flow': [
+        'jqfilter = wishbonecouchdb:JQFilter'
     ]
 }
 
