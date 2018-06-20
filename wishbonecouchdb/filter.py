@@ -1,3 +1,4 @@
+
 import operator
 import pyjq
 from couchdb import Database
@@ -24,11 +25,16 @@ class ExpressionMixin:
 
 class JQFilter(FlowModule, ExpressionMixin):
     """ Mostly based on wishbone-flow-jq module """
+
+
     def __init__(self, actor_config, selection="data", conditions=[]):
         FlowModule.__init__(self, actor_config)
         self.pool.createQueue('inbox')
+
         self.registerConsumer(self.consume, 'inbox')
         self.prepare_expressions()
+        if not self.pool.hasQueue("outbox"):
+            self.pool.createQueue("outbox")
 
     def consume(self, event):
         self.logging.debug("Event from inbox {}".format(event))
@@ -38,9 +44,12 @@ class JQFilter(FlowModule, ExpressionMixin):
             if result:
                 queue = condition['queue']
                 if queue == 'no_match':
-                    del data
+                    self.logging.warn("{}: skipped by filter: {}".format(
+                        data.get('id', ''), condition['name'])
+                    )
                     continue
                 self.submit(event, queue)
+        self.submit(event, "outbox")
 
 
 class ViewFilter(FlowModule, ExpressionMixin):
