@@ -39,9 +39,11 @@ class JQFilter(FlowModule, ExpressionMixin):
     def consume(self, event):
         self.logging.debug("Event from inbox {}".format(event))
         data = event.get(self.kwargs.selection)
+        matched = False
         for condition in self.conditions:
             result = condition['compiled'].first(data)
             if result:
+                matched = True
                 queue = condition['queue']
                 if queue == 'no_match':
                     self.logging.warn("{}: skipped by filter: {}".format(
@@ -49,7 +51,8 @@ class JQFilter(FlowModule, ExpressionMixin):
                     )
                     continue
                 self.submit(event, queue)
-        self.submit(event, "outbox")
+        if not matched:
+            self.submit(event, "outbox")
 
 
 class ViewFilter(FlowModule, ExpressionMixin):
