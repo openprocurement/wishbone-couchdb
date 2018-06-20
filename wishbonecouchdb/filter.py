@@ -92,4 +92,4 @@ class ViewFilter(FlowModule, ExpressionMixin):
                     queue = expression.get('queue', 'outbox')
                     self.submit(data, queue)
                 else:
-                    del data
+                    continue
