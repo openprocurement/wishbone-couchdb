@@ -51,8 +51,6 @@ class JQFilter(FlowModule, ExpressionMixin):
                     )
                     continue
                 self.submit(event, queue)
-        if not matched:
-            self.submit(event, "outbox")
 
 
 class ViewFilter(FlowModule, ExpressionMixin):
@@ -90,6 +88,8 @@ class ViewFilter(FlowModule, ExpressionMixin):
                         expression['expression'], [view_value, data]
                     ))
                     queue = expression.get('queue', 'outbox')
-                    self.submit(data, queue)
+                    self.submit(event, queue)
                 else:
                     continue
+        else:
+            self.submit(event, 'outbox')
