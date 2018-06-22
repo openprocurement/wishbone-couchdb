@@ -57,7 +57,7 @@ def test_coucdb_filter(db):
     module.pool.queue.inbox.put(e)
 
     one = getter(module.pool.queue.outbox)
-    assert one == event_data
+    assert one.get() == event_data
 
 
 def test_jq_filter():
