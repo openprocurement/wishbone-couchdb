@@ -1,6 +1,6 @@
 
 import operator
-import pyjq
+import jq
 from couchdb import Database
 from wishbone.module import FlowModule
 from wishbone.error import ModuleInitFailure
@@ -11,7 +11,7 @@ class ExpressionMixin:
         valid = []
         for condition in self.kwargs.conditions:
             try:
-                condition['compiled'] = pyjq.compile(condition['expression'])
+                condition['compiled'] = jq.jq(condition['expression'])
                 valid.append(condition)
                 q = condition.get('queue', 'outbox')
                 if not self.pool.hasQueue(q):
@@ -41,7 +41,7 @@ class JQFilter(FlowModule, ExpressionMixin):
         data = event.get(self.kwargs.selection)
         matched = False
         for condition in self.conditions:
-            result = condition['compiled'].first(data)
+            result = condition['compiled'].transform(data)
             if result:
                 matched = True
                 queue = condition['queue']
@@ -69,7 +69,7 @@ class ViewFilter(FlowModule, ExpressionMixin):
         self.pool.createQueue('inbox')
         self.registerConsumer(self.consume, 'inbox')
         self.prepare_expressions()
-        self.view_expression = pyjq.compile(view_expression)
+        self.view_expression = jq.jq(view_expression)
 
     def consume(self, event):
         self.logging.debug("Event from inbox {}".format(event))
@@ -77,12 +77,12 @@ class ViewFilter(FlowModule, ExpressionMixin):
 
         resp = self.couchdb.view(
             self.kwargs.view,
-            key=self.view_expression.first(data)
+            key=self.view_expression.transform(data)
             )
         view_value = next(iter(resp.rows), False)
         if view_value:
             for expression in self.conditions:
-                result = expression['compiled'].first([view_value, data])
+                result = expression['compiled'].transform([view_value, data])
                 if result:
                     self.logging.debug("Expression {} matches data {}".format(
                         expression['expression'], [view_value, data]
