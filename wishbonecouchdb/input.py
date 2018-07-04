@@ -1,8 +1,7 @@
+""" __init__.py - Wishbone couchdb input module """
 import os.path
-from ujson import loads
 from couchdb import Database
 from couchdb.http import HTTPError
-from gevent import sleep
 from wishbone.module import InputModule
 from wishbone.event import Event
 
@@ -17,23 +16,16 @@ class CouchdbPoller(InputModule):
             seqfile="seqfile",
             destination="data",
             since=0,
-            **kw
             ):
         InputModule.__init__(self, actor_config)
         self.pool.createQueue("outbox")
         self.since = since
         self.seqfile = seqfile
-        self.kw = kw
         try:
             self.couchdb = Database(couchdb_url)
         except HTTPError:
             self.logging.error("Invalid database name")
             # TODO: create db
-
-    def _get_doc(self, doc_id):
-        return loads(
-            self.couchdb.resource.get(doc_id)[2].read()
-            )
 
     def preHook(self):
         if os.path.exists(self.seqfile):
@@ -48,12 +40,11 @@ class CouchdbPoller(InputModule):
 
     def produce(self):
         while self.loop():
-            for feed in self.couchdb.changes(feed="continuous", since=self.since):
+            for feed in self.couchdb.changes(
+                    feed="continuous", since=self.since, include_docs=True
+            ):
                 self.since = feed.get('seq', feed.get('last_seq', "now"))
                 self.logging.debug("Change event {}".format(feed))
-                if 'id' in feed:
-                    doc = self._get_doc(feed['id'])
-                    e = Event(doc)
-                    self.submit(e, "outbox")
-                sleep(0)
+                if feed and 'doc' in feed:
+                    self.submit(Event(feed['doc']), "outbox")
         self.logging.info("Stopping changes feed from couchdb")
