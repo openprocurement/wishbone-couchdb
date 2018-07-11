@@ -75,21 +75,24 @@ class ViewFilter(FlowModule, ExpressionMixin):
         self.logging.debug("Event from inbox {}".format(event))
         data = event.get(self.kwargs.selection)
 
-        resp = self.couchdb.view(
-            self.kwargs.view,
-            key=self.view_expression.transform(data)
-            )
-        view_value = next(iter(resp.rows), False)
-        if view_value:
-            for expression in self.conditions:
-                result = expression['compiled'].transform([view_value, data])
-                if result:
-                    self.logging.debug("Expression {} matches data {}".format(
-                        expression['expression'], [view_value, data]
-                    ))
-                    queue = expression.get('queue', 'outbox')
-                    self.submit(event, queue)
-                else:
-                    continue
-        else:
-            self.submit(event, 'outbox')
+        try:
+            resp = self.couchdb.view(
+                self.kwargs.view,
+                key=self.view_expression.transform(data)
+                )
+            view_value = next(iter(resp.rows), False)
+            if view_value:
+                for expression in self.conditions:
+                    result = expression['compiled'].transform([view_value, data])
+                    if result:
+                        self.logging.debug("Expression {} matches data {}".format(
+                            expression['expression'], [view_value, data]
+                        ))
+                        queue = expression.get('queue', 'outbox')
+                        self.submit(event, queue)
+                    else:
+                        continue
+            else:
+                self.submit(event, 'outbox')
+        except Exception as e:
+            self.logging.error("Error on view filter {}".format(e))
