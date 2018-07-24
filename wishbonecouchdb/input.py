@@ -6,7 +6,7 @@ from wishbone.module import InputModule
 from wishbone.event import Event
 
 
-class CouchdbPoller(InputModule):
+class CouchdbChangesInput(InputModule):
 
     def __init__(
             self,

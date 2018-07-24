@@ -7,8 +7,6 @@ Input and Output wishbone modules for Couchdb
 CLASSIFIERS = [
     'Development Status :: 2 - Pre-Alpha',
     'Programming Language :: Python',
-    # 'Programming Language :: Python :: 2',
-    # 'Programming Language :: Python :: 2.7',
     'Programming Language :: Python :: 3',
     'Programming Language :: Python :: 3.4',
     'Programming Language :: Python :: 3.5',
@@ -31,10 +29,10 @@ EXTRA = {
 }
 ENTRY_POINTS = {
     'wishbone.module.input': [
-        'couchdb = wishbonecouchdb:CouchdbPoller'
+        'couchdb = wishbonecouchdb:CouchdbChangesInput'
     ],
     'wishbone.module.output': [
-        'couchdb = wishbonecouchdb:CouchdbPush'
+        'couchdb = wishbonecouchdb:CouchdbOutput'
     ],
     'wishbone.module.flow': [
         'viewfilter = wishbonecouchdb:ViewFilter',
