@@ -5,7 +5,7 @@ from wishbone.event import Event
 from wishbone.actor import ActorConfig
 from wishbone.utils.test import getter
 
-from wishbonecouchdb import CouchdbPoller
+from wishbonecouchdb import CouchdbChangesInput
 
 
 DB_HOST = "admin:admin@127.0.0.1"
@@ -30,7 +30,7 @@ def db(request):
 
 def test_couchdb_input(db):
     config = ActorConfig('couchdbpoller', 100, 1, {}, "")
-    module = CouchdbPoller(
+    module = CouchdbChangesInput(
         config,
         couchdb_url="{}/{}".format(couchdb_url, DB_NAME),
     )
