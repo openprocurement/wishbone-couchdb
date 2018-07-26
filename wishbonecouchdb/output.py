@@ -28,6 +28,9 @@ class CouchdbOutput(OutputModule):
             bulk_docs = {}
             for e in extractBulkItems(event):
                 doc = e.get(self.kwargs.selection)
+                doc_id = doc.pop('id', doc.pop('_id', ''))
+                if doc_id:
+                    doc['_id'] = doc['id'] = doc_id
                 bulk_docs[doc['id']] = doc
 
             for row in self.couchdb.view(
