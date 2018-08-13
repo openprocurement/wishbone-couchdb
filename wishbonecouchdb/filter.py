@@ -1,8 +1,9 @@
-
 import operator
 import jq
+from iso8601 import parse_date
 from couchdb import Database
 from wishbone.module import FlowModule
+from wishbone.event import extractBulkItems, Event
 from wishbone.error import ModuleInitFailure
 
 
@@ -96,3 +97,94 @@ class ViewFilter(FlowModule, ExpressionMixin):
                 self.submit(event, 'outbox')
         except Exception as e:
             self.logging.error("Error on view filter {}".format(e))
+
+
+class DatemodifiedFilter(FlowModule):
+
+    def __init__(
+        self,
+        actor_config,
+        couchdb_url,
+        view="releases/datemodified_filter",
+        selection="data"
+    ):
+        FlowModule.__init__(self, actor_config)
+        self.couchdb = Database(couchdb_url)
+        for q in ('inbox', 'outbox'):
+            self.pool.createQueue(q)
+        self.registerConsumer(self.consume, 'inbox')
+
+    def consume(self, event):
+        self.logging.debug("Event from inbox {}".format(event))
+
+        if event.isBulk():
+            bulk_docs = {}
+
+            try:
+                for e in extractBulkItems(event):
+                    doc = e.get(self.kwargs.selection)
+                    doc_id = doc.pop('id', doc.pop('_id', ''))
+                    if doc_id:
+                        doc['_id'] = doc['id'] = doc_id
+                    bulk_docs[doc['id']] = doc
+
+                docs_to_check = list(bulk_docs.keys())
+                # updated docs
+                for row in self.couchdb.view(self.kwargs.view,
+                                             keys=list(bulk_docs.keys())).rows:
+                    if row.id in bulk_docs:
+                        docs_to_check.remove(row.id)
+                        bulk_date_modified = parse_date(bulk_docs[row.id]['date'])
+                        row_date_modified = parse_date(row['value'])
+                        if (bulk_date_modified - row_date_modified).total_seconds() > 0:
+                            self.logging.debug(
+                                "datemodified_filter {} on doc {} higher then value {}".format(
+                                    bulk_docs[row.id]['date'],
+                                    row.id,
+                                    row['value']
+                                )
+                            )
+                            self.submit(Event(bulk_docs[row.id]), 'outbox')
+                # new docs
+                for doc_id in docs_to_check:
+                    self.logging.debug(
+                        "datemodified_filter {} on doc {} new doc".format(
+                            bulk_docs[doc_id]['date'],
+                            doc_id
+                        )
+                    )
+                    self.submit(Event(bulk_docs[doc_id]), 'outbox')
+
+            except Exception as e:
+                self.logging.error("Error on datemodified_filter {}".format(e))
+
+        else:
+            data = event.get(self.kwargs.selection)
+
+            try:
+                resp = self.couchdb.view(
+                    self.kwargs.view,
+                    key=data.id
+                ).rows
+                if not resp:
+                    self.submit(event, 'outbox')
+                    return
+
+                row = next(iter(resp), False)
+                if row:
+                    new_date_modified = parse_date(data['date'])
+                    row_date_modified = parse_date(row['value'])
+                    if (new_date_modified - row_date_modified).total_seconds() > 0:
+                        self.logging.debug(
+                            "datemodified_filter {} on doc {} higher then value {}".format(
+                                data.id['date'],
+                                row.id,
+                                row['value']
+                            )
+                        )
+                        self.submit(event, 'outbox')
+                else:
+                    self.submit(event, 'outbox')
+
+            except Exception as e:
+                self.logging.error("Error on datemodified_filter {}".format(e))

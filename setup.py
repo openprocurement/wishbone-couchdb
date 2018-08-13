@@ -15,6 +15,7 @@ INSTALL_REQUIRES = [
     'setuptools',
     'wishbone',
     'ujson',
+    'iso8601',
     'CouchDB',
     'gevent',
     'jq'
@@ -35,6 +36,7 @@ ENTRY_POINTS = {
         'couchdb = wishbonecouchdb:CouchdbOutput'
     ],
     'wishbone.module.flow': [
+        'datemodified_filter = wishbonecouchdb:DatemodifiedFilter',
         'viewfilter = wishbonecouchdb:ViewFilter',
         'jqfilter = wishbonecouchdb:JQFilter'
     ],
