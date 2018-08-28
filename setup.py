@@ -35,6 +35,7 @@ ENTRY_POINTS = {
         'couchdb = wishbonecouchdb:CouchdbOutput'
     ],
     'wishbone.module.flow': [
+        'datemodified_filter = wishbonecouchdb:DateModifiedFilter',
         'viewfilter = wishbonecouchdb:ViewFilter',
         'jqfilter = wishbonecouchdb:JQFilter'
     ],

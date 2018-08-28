@@ -1,8 +1,8 @@
-
 import operator
 import jq
 from couchdb import Database
 from wishbone.module import FlowModule
+from wishbone.event import extractBulkItems, Event
 from wishbone.error import ModuleInitFailure
 
 
@@ -96,3 +96,89 @@ class ViewFilter(FlowModule, ExpressionMixin):
                 self.submit(event, 'outbox')
         except Exception as e:
             self.logging.error("Error on view filter {}".format(e))
+
+
+class DateModifiedFilter(FlowModule):
+
+    def __init__(
+        self,
+        actor_config,
+        couchdb_url,
+        view="releases/datemodified_filter",
+        selection="data"
+    ):
+        FlowModule.__init__(self, actor_config)
+        self.couchdb = Database(couchdb_url)
+        for q in ('inbox', 'outbox'):
+            self.pool.createQueue(q)
+        self.registerConsumer(self.consume, 'inbox')
+
+    def consume(self, event):
+        self.logging.debug("Event from inbox {}".format(event))
+
+        if event.isBulk():
+            bulk_docs = {}
+
+            try:
+                for e in extractBulkItems(event):
+                    doc = e.get(self.kwargs.selection)
+                    doc_id = doc.pop('id', doc.pop('_id', ''))
+                    if doc_id:
+                        doc['_id'] = doc['id'] = doc_id
+                    bulk_docs[doc['id']] = doc
+
+                bulk_docs_to_check, checked_bulk_docs = list(bulk_docs.keys()), list()
+                # updated docs
+                for row in self.couchdb.view(self.kwargs.view, keys=bulk_docs_to_check).rows:
+                    if row.id in bulk_docs:
+                        checked_bulk_docs.append(row.id)
+                        if (bulk_docs[row.id]['date'] > row['value']):
+                            self.logging.debug(
+                                "datemodified_filter {} on doc {} higher then value {}".format(
+                                    bulk_docs[row.id]['date'],
+                                    row.id,
+                                    row['value']
+                                )
+                            )
+                            self.submit(Event(bulk_docs[row.id]), 'outbox')
+                # new docs
+                for doc_id in list(set(bulk_docs_to_check) - set(checked_bulk_docs)):
+                    self.logging.debug(
+                        "datemodified_filter {} on doc {} new doc".format(
+                            bulk_docs[doc_id]['date'],
+                            doc_id
+                        )
+                    )
+                    self.submit(Event(bulk_docs[doc_id]), 'outbox')
+
+            except Exception as e:
+                self.logging.error("Error on datemodified_filter {}".format(e))
+
+        else:
+            data = event.get(self.kwargs.selection)
+
+            try:
+                resp = self.couchdb.view(
+                    self.kwargs.view,
+                    key=data.id
+                ).rows
+                if not resp:
+                    self.submit(event, 'outbox')
+                    return
+
+                row = next(iter(resp), False)
+                if row:
+                    if (data['date'] > row['value']):
+                        self.logging.debug(
+                            "datemodified_filter {} on doc {} higher then value {}".format(
+                                data['date'],
+                                row.id,
+                                row['value']
+                            )
+                        )
+                        self.submit(event, 'outbox')
+                else:
+                    self.submit(event, 'outbox')
+
+            except Exception as e:
+                self.logging.error("Error on datemodified_filter {}".format(e))
