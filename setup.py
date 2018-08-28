@@ -15,7 +15,6 @@ INSTALL_REQUIRES = [
     'setuptools',
     'wishbone',
     'ujson',
-    'iso8601',
     'CouchDB',
     'gevent',
     'jq'
