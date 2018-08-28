@@ -2,4 +2,4 @@
 
 from .input import CouchdbChangesInput
 from .output import CouchdbOutput
-from .filter import DatemodifiedFilter, ViewFilter, JQFilter
+from .filter import DateModifiedFilter, ViewFilter, JQFilter

@@ -1,6 +1,5 @@
 import operator
 import jq
-from iso8601 import parse_date
 from couchdb import Database
 from wishbone.module import FlowModule
 from wishbone.event import extractBulkItems, Event
@@ -99,7 +98,7 @@ class ViewFilter(FlowModule, ExpressionMixin):
             self.logging.error("Error on view filter {}".format(e))
 
 
-class DatemodifiedFilter(FlowModule):
+class DateModifiedFilter(FlowModule):
 
     def __init__(
         self,
@@ -128,15 +127,12 @@ class DatemodifiedFilter(FlowModule):
                         doc['_id'] = doc['id'] = doc_id
                     bulk_docs[doc['id']] = doc
 
-                docs_to_check = list(bulk_docs.keys())
+                bulk_docs_to_check, checked_bulk_docs = list(bulk_docs.keys()), list()
                 # updated docs
-                for row in self.couchdb.view(self.kwargs.view,
-                                             keys=list(bulk_docs.keys())).rows:
+                for row in self.couchdb.view(self.kwargs.view, keys=bulk_docs_to_check).rows:
                     if row.id in bulk_docs:
-                        docs_to_check.remove(row.id)
-                        bulk_date_modified = parse_date(bulk_docs[row.id]['date'])
-                        row_date_modified = parse_date(row['value'])
-                        if (bulk_date_modified - row_date_modified).total_seconds() > 0:
+                        checked_bulk_docs.append(row.id)
+                        if (bulk_docs[row.id]['date'] > row['value']):
                             self.logging.debug(
                                 "datemodified_filter {} on doc {} higher then value {}".format(
                                     bulk_docs[row.id]['date'],
@@ -146,7 +142,7 @@ class DatemodifiedFilter(FlowModule):
                             )
                             self.submit(Event(bulk_docs[row.id]), 'outbox')
                 # new docs
-                for doc_id in docs_to_check:
+                for doc_id in list(set(bulk_docs_to_check) - set(checked_bulk_docs)):
                     self.logging.debug(
                         "datemodified_filter {} on doc {} new doc".format(
                             bulk_docs[doc_id]['date'],
@@ -172,12 +168,10 @@ class DatemodifiedFilter(FlowModule):
 
                 row = next(iter(resp), False)
                 if row:
-                    new_date_modified = parse_date(data['date'])
-                    row_date_modified = parse_date(row['value'])
-                    if (new_date_modified - row_date_modified).total_seconds() > 0:
+                    if (data['date'] > row['value']):
                         self.logging.debug(
                             "datemodified_filter {} on doc {} higher then value {}".format(
-                                data.id['date'],
+                                data['date'],
                                 row.id,
                                 row['value']
                             )
