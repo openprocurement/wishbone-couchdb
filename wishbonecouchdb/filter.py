@@ -182,3 +182,47 @@ class DateModifiedFilter(FlowModule):
 
             except Exception as e:
                 self.logging.error("Error on datemodified_filter {}".format(e))
+
+
+class HashIDFilter(FlowModule):
+    """ Filter documents if they are present in database """
+    def __init__(
+            self,
+            actor_config,
+            couchdb_url,
+            selection="data",
+            filter_view="releases/datemodified_filter",
+    ):
+        FlowModule.__init__(self, actor_config)
+        self.pool.createQueue('inbox')
+        self.couchdb = Database(couchdb_url)
+        self.filter_view = filter_view
+        self.registerConsumer(self.consume, 'inbox')
+        if not self.pool.hasQueue("outbox"):
+            self.pool.createQueue("outbox")
+
+    def consume(self, event):
+        if event.isBulk():
+            docs = {}
+            for e in extractBulkItems(event):
+                data = e.get(self.kwargs.selection)
+                docs[data['id']] = data
+
+            resp_ids = {
+                row.id: None for row in 
+                self.couchdb.view(self.filter_view, keys=list(docs.keys())).rows   
+            }
+            
+            for doc in docs:
+                if doc not in resp_ids:
+                    self.submit(Event(docs[doc]), 'outbox')
+                else:
+                    self.logging.warn("Skip doc {} as present".format(doc))
+        else:
+            id_ = event.get(self.kwargs.selection).get('id')
+            if id_:
+                if id_ not in self.couchdb:
+                    self.submit(event, 'outbox')
+                else:
+                    self.logging.warn("Skip doc {} as present".format(id_))
+

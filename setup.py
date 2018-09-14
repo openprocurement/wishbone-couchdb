@@ -37,7 +37,8 @@ ENTRY_POINTS = {
     'wishbone.module.flow': [
         'datemodified_filter = wishbonecouchdb:DateModifiedFilter',
         'viewfilter = wishbonecouchdb:ViewFilter',
-        'jqfilter = wishbonecouchdb:JQFilter'
+        'jqfilter = wishbonecouchdb:JQFilter',
+        'hashid = wishbonecouchdb:HashIDFilter',
     ],
 }
 
