@@ -21,7 +21,7 @@ Pygments==2.7.4
 python-daemon-3K==1.5.8
 python-dateutil==2.7.3
 PyYAML==5.4
-requests==2.19.1
+requests==2.20.0
 scalpl==0.2.5
 six==1.11.0
 ujson==1.35
