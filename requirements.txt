@@ -24,6 +24,6 @@ PyYAML==5.4
 requests==2.19.1
 scalpl==0.2.5
 six==1.11.0
-ujson==1.35
+ujson==5.4.0
 urllib3==1.26.5
 wishbone==3.1.3
